@@ -106,15 +106,13 @@ jobs:
 
       - name: Push Allure Report to gh-pages branch
         run: |
-          cd allure-history
-          git init
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add .
-          git commit -m "Update Allure Report [$(date)]" || echo "No changes to commit"
-          git branch -M gh-pages
-          git remote add origin https://github.com/dtekluva/payboxpostman.git
-          git push -f origin gh-pages
+            cd allure-history
+            git config --global user.email "github-actions@github.com"
+            git config --global user.name "GitHub Actions"
+            git add .
+            git commit -m "Update Allure Report [$(date)]" || echo "No changes to commit"
+            git push origin gh-pages
+
 
       - name: Wait for Allure report to be generated
         if: always()
