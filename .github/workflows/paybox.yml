@@ -35,11 +35,8 @@ jobs:
           rm -rf allure-history/.git
 
       - name: Copy existing content to allure-history
-        run: |
-          mkdir -p allure-history
-          if [ -d allure-history ]; then
-            cp -r allure-history/* allure-history/
-          fi
+        run: mkdir -p allure-history  # Only create the directory if needed
+
 
       - name: Find latest folder in allure-history
         id: latest_folder
