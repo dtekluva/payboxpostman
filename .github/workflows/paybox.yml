@@ -7,6 +7,7 @@ on:
     - cron: '0 18 * * 3' # Runs every Wednesday by 4pm
     - cron: '0 18 * * 5' # Runs every Friday by 4pm
     - cron: '0 20 * * 0' # Runs every Sunday by 4pm
+
 jobs:
   run_tests:
     if: github.event_name == 'schedule' || github.event_name == 'push'
@@ -29,29 +30,28 @@ jobs:
 
       - name: Clone gh-pages without .git
         run: |
-            rm -rf allure-history
-            git clone --depth=1 --branch=gh-pages https://github.com/dtekluva/payboxpostman.git allure-history
-            rm -rf allure-history/.git
-
+          rm -rf allure-history
+          git clone --depth=1 --branch=gh-pages https://github.com/dtekluva/payboxpostman.git allure-history
+          rm -rf allure-history/.git
 
       - name: Copy existing content to allure-history
         run: |
           mkdir -p allure-history
-          if [ -d gh-pages ]; then
-            cp -r gh-pages/* allure-history/
+          if [ -d allure-history ]; then
+            cp -r allure-history/* allure-history/
           fi
 
-      - name: Find latest folder in gh-pages
+      - name: Find latest folder in allure-history
         id: latest_folder
         run: |
-          latest_folder=$(find gh-pages -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | sort -n | tail -n 1)
+          latest_folder=$(find allure-history -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | sort -n | tail -n 1)
           echo "Latest Folder: $latest_folder"
           echo "::set-output name=latest_folder::$latest_folder"
 
       - name: Parse latest summary.json
         id: parse_json
         run: |
-          summary_path="${{ steps.latest_folder.outputs.latest_folder }}/widgets/summary.json"
+          summary_path="allure-history/${{ steps.latest_folder.outputs.latest_folder }}/widgets/summary.json"
           echo "Summary Path: $summary_path"
           if [ -f "$summary_path" ]; then
             cat "$summary_path"
@@ -86,13 +86,12 @@ jobs:
         if: steps.build.outcome == 'success'
         run: |
           latest_folder=${{ steps.latest_folder.outputs.latest_folder }}
-          echo "Latest Folder: $latest_folder"
-          summary_path="$latest_folder/widgets/summary.json"
+          summary_path="allure-history/$latest_folder/widgets/summary.json"
           echo "Summary Path: $summary_path"
           if [[ -e "$summary_path" ]]; then
-            cat "$summary_path"  # Print content before
-            sudo sed -i 's/Allure Report/External API - API Quality Readiness/' "$summary_path"
-            cat "$summary_path"  # Print content after
+            cat "$summary_path"
+            sed -i 's/Allure Report/External API - API Quality Readiness/' "$summary_path"
+            cat "$summary_path"
           else
             echo "Error: summary.json not found in the latest folder."
           fi
@@ -104,20 +103,21 @@ jobs:
         continue-on-error: true
         with:
           allure_results: allure-results
-          gh_pages: gh-pages
+          gh_pages: allure-history
           allure_report: allure-report
           allure_history: allure-history
 
       - name: Push Allure Report to gh-pages branch
-        uses: actions/checkout@v2
-        with:
-          ref: gh-pages
-      - run: |
+        run: |
+          cd allure-history
+          git init
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
           git add .
           git commit -m "Update Allure Report [$(date)]" || echo "No changes to commit"
-          git push origin gh-pages
+          git branch -M gh-pages
+          git remote add origin https://github.com/dtekluva/payboxpostman.git
+          git push -f origin gh-pages
 
       - name: Wait for Allure report to be generated
         if: always()
