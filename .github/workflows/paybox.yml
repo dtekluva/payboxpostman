@@ -27,13 +27,12 @@ jobs:
            newman run Postman-Collections/Postman-Collections.json --reporters cli,allure
            echo "Postman tests run."
 
-      - name: Get Allure history
-        uses: actions/checkout@v2
-        if: always()
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: gh-pages
+      - name: Clone gh-pages without .git
+        run: |
+            rm -rf allure-history
+            git clone --depth=1 --branch=gh-pages https://github.com/dtekluva/payboxpostman.git allure-history
+            rm -rf allure-history/.git
+
 
       - name: Copy existing content to allure-history
         run: |
